@@ -2,7 +2,13 @@
 import { GoogleGenAI } from "@google/genai";
 import { RESUME_SUMMARY, EXPERIENCES, SKILLS } from "../constants";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+if (!API_KEY) {
+  console.error("Missing Gemini API Key. Please set VITE_GEMINI_API_KEY in your environment variables.");
+}
+
+const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key_to_prevent_crash_on_init" });
 
 const SYSTEM_INSTRUCTION = `
 You are an AI assistant for Zaber Shawon's developer portfolio. 
