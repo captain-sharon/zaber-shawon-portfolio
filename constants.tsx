@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { Skill, Experience, Project } from './types';
-import { 
-  Code2, 
-  Layers, 
-  Database, 
-  Cpu, 
-  Globe, 
+import {
+  Code2,
+  Layers,
+  Database,
+  Cpu,
+  Globe,
   Server,
   Terminal,
   Palette
@@ -23,7 +23,7 @@ export const COLORS = {
  * 1. CHANGE YOUR IMAGE HERE
  * Replace the URL below with your actual photo link.
  */
-export const PROFILE_IMAGE_URL = "components/IMG_20251226_141607_797.png";
+export const PROFILE_IMAGE_URL = "/images/profile.png";
 
 /**
  * 2. CHANGE YOUR SOCIAL LINKS HERE
