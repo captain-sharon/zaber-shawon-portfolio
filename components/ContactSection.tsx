@@ -27,8 +27,9 @@ const ContactSection: React.FC = () => {
       setTimeout(() => setIsSubmitted(false), 5000);
     } catch (error) {
       console.error("Failed to send message:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       setIsSubmitting(false);
-      alert("Failed to send message. Please try again later.");
+      alert(`Failed to send message: ${errorMessage}. Check console for details.`);
     }
   };
 
