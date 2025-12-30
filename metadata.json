@@ -1,0 +1,8 @@
+
+{
+  "name": "Zaber Shawon Portfolio",
+  "description": "A high-performance, stunning developer portfolio for Zaber Shawon, featuring AI-powered interaction, animations, and detailed experience showcase.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
