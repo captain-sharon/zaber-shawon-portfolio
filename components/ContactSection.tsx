@@ -20,6 +20,10 @@ const ContactSection: React.FC = () => {
         from_email: formData.email,
         message: formData.message,
         reply_to: formData.email,
+        // Adding common variations to match whatever the user put in their template
+        name: formData.name,
+        email: formData.email,
+        subject: "New Message from Portfolio",
       });
 
       // 2. Save to Supabase (Database)
