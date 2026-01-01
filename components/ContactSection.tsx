@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
 import { saveMessage } from '../services/messageService';
+import { sendEmail } from '../services/emailService';
 
 const ContactSection: React.FC = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
@@ -12,16 +13,13 @@ const ContactSection: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // 1. Send to Web3Forms (Email)
-      const formBody = new FormData();
-      formBody.append("access_key", import.meta.env.VITE_WEB3FORMS_ACCESS_KEY);
-      formBody.append("name", formData.name);
-      formBody.append("email", formData.email);
-      formBody.append("message", formData.message);
-
-      const emailPromise = fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        body: formBody
+      // 1. Send via EmailJS (Professional & Instant)
+      const emailPromise = sendEmail({
+        to_name: "Zaber Shawon",
+        from_name: formData.name,
+        from_email: formData.email,
+        message: formData.message,
+        reply_to: formData.email,
       });
 
       // 2. Save to Supabase (Database)
@@ -38,8 +36,8 @@ const ContactSection: React.FC = () => {
       const dbResult = results[1];
 
       // Check results
-      if (emailResult.status === 'rejected' || (emailResult.status === 'fulfilled' && !emailResult.value.ok)) {
-        console.error("Web3Forms failed:", emailResult.status === 'rejected' ? emailResult.reason : "Network response was not ok");
+      if (emailResult.status === 'rejected') {
+        console.error("EmailJS failed:", emailResult.reason);
       }
 
       if (dbResult.status === 'rejected') {
@@ -47,8 +45,8 @@ const ContactSection: React.FC = () => {
       }
 
       // If both fail, throw error
-      if ((emailResult.status === 'rejected' || (emailResult.status === 'fulfilled' && !emailResult.value.ok)) && dbResult.status === 'rejected') {
-        throw new Error("Failed to send message and save database.");
+      if (emailResult.status === 'rejected' && dbResult.status === 'rejected') {
+        throw new Error("Failed to send message and save to database.");
       }
 
       setIsSubmitting(false);
