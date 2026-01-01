@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Mail, Calendar, User } from 'lucide-react';
+import { LogOut, Mail, Calendar, User, ArrowUpDown } from 'lucide-react';
 
 interface Message {
     id: number;
@@ -15,11 +15,12 @@ interface Message {
 const Dashboard: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchMessages();
-    }, []);
+    }, [sortOrder]);
 
     const fetchMessages = async () => {
         if (!supabase) return;
@@ -32,10 +33,11 @@ const Dashboard: React.FC = () => {
         }
 
         try {
+            setLoading(true);
             const { data, error } = await supabase
                 .from('messages')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: sortOrder === 'asc' });
 
             if (error) {
                 console.error('Error fetching messages:', error);
@@ -56,7 +58,11 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    if (loading) {
+    const toggleSort = () => {
+        setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+    };
+
+    if (loading && messages.length === 0) {
         return (
             <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">
                 Loading dashboard...
@@ -72,17 +78,28 @@ const Dashboard: React.FC = () => {
                         <h1 className="text-3xl font-bold text-white">Message Dashboard</h1>
                         <p className="text-gray-400">Viewing {messages.length} messages</p>
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 border border-white/10 rounded-xl hover:bg-red-900/20 hover:text-red-400 hover:border-red-500/30 transition-all text-sm font-medium"
-                    >
-                        <LogOut size={18} />
-                        Sign Out
-                    </button>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={toggleSort}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 border border-white/10 rounded-xl hover:bg-gray-800 hover:border-orange-500/30 transition-all text-sm font-medium text-gray-300"
+                        >
+                            <ArrowUpDown size={18} />
+                            Sort: {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}
+                        </button>
+
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 border border-white/10 rounded-xl hover:bg-red-900/20 hover:text-red-400 hover:border-red-500/30 transition-all text-sm font-medium"
+                        >
+                            <LogOut size={18} />
+                            Sign Out
+                        </button>
+                    </div>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {messages.length === 0 ? (
+                    {messages.length === 0 && !loading ? (
                         <div className="col-span-full text-center py-24 text-gray-500 bg-gray-900/30 rounded-3xl border border-white/5">
                             <Mail size={48} className="mx-auto mb-4 opacity-50" />
                             <p>No messages found yet.</p>
