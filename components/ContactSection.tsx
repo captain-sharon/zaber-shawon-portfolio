@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
 import { sendEmail } from '../services/emailService';
+import { saveMessage } from '../services/messageService';
 
 const ContactSection: React.FC = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
@@ -13,13 +14,42 @@ const ContactSection: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      await sendEmail({
+      // Create promises for both operations
+      const emailPromise = sendEmail({
         to_name: "Zaber Shawon",
         from_name: formData.name,
         from_email: formData.email,
         message: formData.message,
         reply_to: formData.email,
       });
+
+      const dbPromise = saveMessage({
+        name: formData.name,
+        email: formData.email,
+        message: formData.message,
+      });
+
+      // Wait for both, but don't let one failure stop the other if possible
+      // Using allSettled to track status of both
+      const results = await Promise.allSettled([emailPromise, dbPromise]);
+
+      const emailResult = results[0];
+      const dbResult = results[1];
+
+      // Log errors if any
+      if (emailResult.status === 'rejected') {
+        console.error("EmailJS failed:", emailResult.reason);
+      }
+      if (dbResult.status === 'rejected') {
+        console.error("Supabase failed:", dbResult.reason);
+      }
+
+      // Conside success if at least one succeeded or just proceed. 
+      // Usually we want to show success to user if they submitted.
+      // If both fail, then show error.
+      if (emailResult.status === 'rejected' && dbResult.status === 'rejected') {
+        throw new Error("Failed to send message and save to database.");
+      }
 
       setIsSubmitting(false);
       setIsSubmitted(true);
