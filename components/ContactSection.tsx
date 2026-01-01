@@ -1,7 +1,5 @@
-
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
-import { sendEmail } from '../services/emailService';
 import { saveMessage } from '../services/messageService';
 
 const ContactSection: React.FC = () => {
@@ -14,41 +12,43 @@ const ContactSection: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Create promises for both operations
-      const emailPromise = sendEmail({
-        to_name: "Zaber Shawon",
-        from_name: formData.name,
-        from_email: formData.email,
-        message: formData.message,
-        reply_to: formData.email,
+      // 1. Send to Web3Forms (Email)
+      const formBody = new FormData();
+      formBody.append("access_key", import.meta.env.VITE_WEB3FORMS_ACCESS_KEY);
+      formBody.append("name", formData.name);
+      formBody.append("email", formData.email);
+      formBody.append("message", formData.message);
+
+      const emailPromise = fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formBody
       });
 
+      // 2. Save to Supabase (Database)
       const dbPromise = saveMessage({
         name: formData.name,
         email: formData.email,
         message: formData.message,
       });
 
-      // Wait for both, but don't let one failure stop the other if possible
-      // Using allSettled to track status of both
+      // Wait for both results
       const results = await Promise.allSettled([emailPromise, dbPromise]);
 
       const emailResult = results[0];
       const dbResult = results[1];
 
-      // Log errors if any
-      if (emailResult.status === 'rejected') {
-        console.error("EmailJS failed:", emailResult.reason);
+      // Check results
+      if (emailResult.status === 'rejected' || (emailResult.status === 'fulfilled' && !emailResult.value.ok)) {
+        console.error("Web3Forms failed:", emailResult.status === 'rejected' ? emailResult.reason : "Network response was not ok");
       }
+
       if (dbResult.status === 'rejected') {
         console.error("Supabase failed:", dbResult.reason);
       }
 
-      // Conside success if at least one succeeded or just proceed. 
-      // Usually we want to show success to user if they submitted.
-      // If both fail, then show error.
-      if (emailResult.status === 'rejected' && dbResult.status === 'rejected') {
-        throw new Error("Failed to send message and save to database.");
+      // If both fail, throw error
+      if ((emailResult.status === 'rejected' || (emailResult.status === 'fulfilled' && !emailResult.value.ok)) && dbResult.status === 'rejected') {
+        throw new Error("Failed to send message and save database.");
       }
 
       setIsSubmitting(false);
@@ -56,10 +56,10 @@ const ContactSection: React.FC = () => {
       setFormData({ name: '', email: '', message: '' });
       setTimeout(() => setIsSubmitted(false), 5000);
     } catch (error) {
-      console.error("Failed to send message:", error);
+      console.error("Failed to submit:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       setIsSubmitting(false);
-      alert(`Failed to send message: ${errorMessage}. Check console for details.`);
+      alert(`Failed to send message: ${errorMessage}.`);
     }
   };
 
